@@ -1,0 +1,456 @@
+#!/bin/bash
+# --------------- Name your job
+#$ -N LDL_19_APOB
+# --------------- choose your shell
+#$ -S /bin/bash
+# ---------------- Use current working Directory
+#$ -cwd
+# ---------------- Join output and error files
+#$ -j y
+
+## analysis for genomic region
+
+
+########################################################################
+## Results can be found in file TOP_SNPS.csv. LocusZoom plots can be  ##
+## found in pdf files listed in TOP_SNPS.csv. Please begin by         ##
+## inputting data below.                                              ##
+##########################input data here###############################
+
+prog=/data4/jperry/PIPELINE_BIN/mmap.2018_06_15_16_42.intel
+ped=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.analysis.csv 
+kinbin=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.kinship.MZ.bin
+
+covfile=/data4/Regeneron/datasets/ImpRgn3TM5_APOB_APOC3_LIPE_B4GALT1.csv
+pheno=/data4/jfrench/WELL_12JUN2018_updated.csv
+suffix=run1
+trait=LDL_WELL
+chr=19
+min=11000000 
+max=11700000
+genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+
+#Set up covariates: separate covariates with a "," 
+covariates_list="age, sex, APOB, APOC3"
+
+# set p-value for creating first markers list for LD calculation
+pmark=0.01
+
+# set p-value for ending analysis (exponential form)
+max_pvala=1E-4
+
+# set p-value for creating markers list in loop for LD calculations
+pmark_loop=0.05
+
+# set p-value for cutting down SNP marker set after each MMAP analysis
+pcut=0.10
+
+# set max value for y axis in LocusZoom plot
+ymax=15
+
+# set significance lines for LocusZoom plot. Format "<upper_line>,<lower_line>"
+sigline="3.3,1.00"
+
+# set name for results directory
+dir=Results
+
+# Do you want the output other than results deleted? (0=yes; 1=no)
+debug=1
+
+###################beginning of script###################################
+#create covariate file
+echo $covariates_list > cov_col.csv
+sed 's/\,/\t/g' cov_col.csv > covar.txt
+covariates=`awk -F"\t" 'NR==1''{print; exit}' covar.txt` 
+
+
+$prog --ped $ped --read_binary_covariance_file $kinbin  --phenotype_filename $pheno  --trait  $trait  --covariates $covariates  --file_suffix $suffix  --binary_genotype_filename $genomxs --covariate_filename $covfile --binary_covariate_filename $genomxs  --genomic_region $chr $min $max --model add --all_output  > $suffix.mmap.log
+
+
+##sort the add.mle.pval.csv file by pvalue	
+(head -n 1 $trait.$suffix.add.mle.pval.csv && tail -n +2 $trait.$suffix.add.mle.pval.csv | sort -gt, -k17,17) > sorted_$trait.$suffix.csv
+
+## print top hit SNPNAME - LZ
+awk -F"," 'NR==2 {OFS=","; print $1}' sorted_$trait.$suffix.csv > p_valueLZ.csv
+
+# remove letters - can be skipped if not in 20:10331:A:G format
+sed 's/:[^:]*//2g' p_valueLZ.csv > pval_cutLZ.csv
+
+#add prefix
+prefix="chr"
+awk -F, -v prefix=$prefix '{print prefix $1}' pval_cutLZ.csv > pval_chrLZ.csv
+
+####add pvalue and beta - LZ - can be skipped if not in 20:10331:A:G format
+pv=`awk -F"," 'NR==2 {OFS=","; print $17}' sorted_$trait.$suffix.csv`
+awk -F"," -v pv=$pv 'BEGIN {OFS=","} {$2=pv; print}' pval_chrLZ.csv > p_valLZ.csv
+beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' p_valLZ.csv > pvalLZ.csv
+	
+#add header to pval.csv - LZ
+echo "SNPNAME, PVALUE, BETA" > pval.header
+cat pval.header pvalLZ.csv > TOP_SNPS_LZ.csv
+	
+###TOP_SNPS for LD calc#####
+awk -F"," 'NR==2 {OFS=","; print $1,$17}' sorted_$trait.$suffix.csv > pval_LD.csv
+beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' pval_LD.csv > pvalLD.csv
+
+#add header#
+cat pval.header pvalLD.csv > TOP_SNPS.csv
+
+###create markers.list.text
+awk -F, -v pmark=$pmark '$17<pmark { print $1}' sorted_$trait.$suffix.csv > test1.marker.list.txt
+
+
+############ use MMAP to calculate LD with top hit as ref variant#################
+name=test1
+listLD=$name.marker.list.txt
+calcLD_refsnp=`awk -F, 'NR==2 {print $1}' TOP_SNPS.csv`
+bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+
+# BASIC DEFINITIONS:
+myMMAP=/data4/datasets/mmap/mmap
+#myMMAP=/data4/datasets/mmap/mmap.2018_06_15_16_42.intel
+myPLINK=/data4/bin/plink
+datasetLD=$name.subset
+resultsLD=$name.results
+plinkOut1=$name.plinkOut1.log
+mmapOut1=$name.mmapOut1.log
+mmapOut2=$name.mmapOut2.log
+mmapOut3=$name.mmapOut3.log
+mmapOut4=$name.mmapOut4.log
+skip_fields=8  # number of columns to skip before individual genotypes begin
+
+# STEP1: subset the genotype file with a marker_set and write out as a csv file
+$myMMAP --marker_by_subject_mmap2csv --binary_input_filename $bin_input_file --csv_output_filename $datasetLD.csv --marker_set $listLD --file_suffix $name.1 > $mmapOut1 2>&1
+
+# STEP2: change imputed dosages to genotype values of 0, 1 or 2
+#        This step can be skipped if genotypes are not imputed dosages
+/usr/bin/perl dose_to_genotype.pl $datasetLD.csv $skip_fields
+cp $datasetLD.csv $datasetLD.original.csv
+mv $datasetLD.csv.genotypes $datasetLD.csv
+
+# STEP3: convert csv to mmap MxS.bin
+$myMMAP --write_binary_genotype_file --csv_input_filename $datasetLD.csv --binary_output_filename $datasetLD.MxS.bin --num_skip_fields $skip_fields --file_suffix $name.2 > $mmapOut2 2>&1
+
+# STEP4: transpose MxS.bin to SxM.bin
+$myMMAP --transpose_binary_genotype_file --binary_input_filename $datasetLD.MxS.bin --binary_output_filename $datasetLD.SxM.bin --file_suffix $name.3 > $mmapOut3 2>&1
+
+# STEP5: create plink dataset from the SxM.bin
+$myMMAP --subject_by_marker_mmap2plink --binary_input_filename $datasetLD.SxM.bin --plink_output_prefix $datasetLD --use_snpname --file_suffix $name.4 > $mmapOut4 2>&1
+
+# STEP6: run Plink to perform the LD calculations on everything in the "subset" dataset
+$myPLINK --file $datasetLD --r2 dprime --ld-snp $calcLD_refsnp --make-founders --out $resultsLD --ld-window 999999999 --ld-window-kb 999999999 --ld-window-r2 0 > $plinkOut1 2>&1
+
+
+
+#sort result file
+(head -n 1 $name.results.ld && tail -n +2 $name.results.ld | sort -gr -k7,7) > sorted.$name.results.ld
+
+####create epacts file####
+# remove letters 
+f=$trait.$suffix.add.mle.pval.csv
+awk -F, '{OFS="\t"; print $3,$4,$4,$1,$17}' $f | tail -n +1 > epacts.INPUT.txt
+sed 's/[A-Z]*//g' epacts.INPUT.txt > epacts.INPUT_cut.txt
+sed -i 's/:://g' epacts.INPUT_cut.txt
+sed -i '1d' epacts.INPUT_cut.txt
+
+#add prefix 
+prefix="chr"
+awk -v prefix=$prefix '{print $1,$2,$3,prefix $4,$5}' epacts.INPUT_cut.txt > epacts.INPUT_chr.txt
+
+#add in headers
+echo "#CHROM	BEGIN	END	MARKER_ID	PVALUE" > epacts.header
+cat epacts.header epacts.INPUT_chr.txt > epac.$name.INPUT_final.txt.epacts
+
+####create ld file####
+ldfile=sorted.$name.results.ld 
+awk '{OFS="\t"; print $3,$6,$8,$7}' $ldfile > locuszoom.INPUT.txt.ld
+
+# remove letters
+sed 's/[A-Z]*//g' locuszoom.INPUT.txt.ld > locuszoom.INPUT_cut.txt.ld
+sed -i 's/:://g' locuszoom.INPUT_cut.txt.ld
+sed -i '1d' locuszoom.INPUT_cut.txt.ld
+
+#add prefix
+prefix="chr"
+awk -v prefix=$prefix '{print prefix $1,prefix $2,$3,$4}' locuszoom.INPUT_cut.txt.ld > locuszoom.INPUT_chr.txt.ld
+
+#add in headers
+echo "snp1	snp2	dprime	rsquare" > ld.header
+cat ld.header locuszoom.INPUT_chr.txt.ld > locuszoom.$name.INPUT_final.txt.ld
+
+##make files tab delimited###
+sed 's/ /\t/g' epac.test1.INPUT_final.txt.epacts > ts.epac.test1.INPUT_final.txt.epacts
+sed 's/ /\t/g' locuszoom.$name.INPUT_final.txt.ld > ts.locuszoom.test1.INPUT_final.txt.ld
+
+## create variable for vertical line in LocusZoom plot
+vertline=`awk -F, 'NR==2 {print $1}' TOP_SNPS_LZ.csv | cut -sd':' -f2`
+
+########################## generate LocusZoom plot #######################################
+calcLD_refsnp=`awk -F, 'NR==2 {print $1}' TOP_SNPS_LZ.csv`
+
+/data4/bin/locuszoom  --build hg38 --epacts ts.epac.test1.INPUT_final.txt.epacts --ld ts.locuszoom.test1.INPUT_final.txt.ld --refsnp $calcLD_refsnp --chr $chr --start $min --end $max geneFontSize=.5 ymax=$ymax vertline="$vertline" vertLineColor="green4" vertLineType="1" vertLineWidth="1" signifLine=$sigline signifLineColor="red,royalblue" title="$trait on Chr$chr [ImpRgn3TM5]" titleCex=1.3 title2="Top Variant: $calcLD_refsnp Covariates: $covariates" title2Cex=1.0 title2Color="gray30" showRecomb=TRUE recombColor="gray80" recombAxisColor="gray60" --plotonly --cache None --no-date --prefix "LZ_$trait.$name.ImpRgn3TM5"  >> LZdialog.log 2>&1 
+
+
+##move file name onto doc##
+awk -F"," 'NR==2 {OFS=","; print $1,$17}' sorted_$trait.$suffix.csv > pval_LD.csv
+beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' pval_LD.csv > pvalLD.csv
+file=LZ_$trait.$name.ImpRgn3TM5.pdf
+echo $file > LZname.csv
+lzname=`awk -F"," 'NR==1 {print $1}' LZname.csv`
+awk -F"," -v lzname=$lzname 'BEGIN {OFS=","} {$4=lzname; print}' pvalLD.csv > pval_withLZ.csv
+
+#add header#
+echo "SNPNAME, PVALUE, BETA, LZ_FILENAME" > pval_withLZ.header
+cat pval_withLZ.header pval_withLZ.csv > TOP_SNPS.csv
+
+#cut down markers for inclusion in further analysis
+awk -F, -v pcut=$pcut '$17 < $pcut { print $1}' sorted_$trait.$suffix.csv > markers.csv
+
+#################################################################################################################################
+############################################### start of loop ###################################################################
+#################################################################################################################################
+
+a=2
+
+#switch row to column
+sed 's/ \+/,/g' covar.txt > top_row.csv
+tr -s ',' '\n' < top_row.csv | tr -d '"' > top_col.csv
+
+#add to cov list
+awk -v a=$a -F"," 'NR==a {print $1}' TOP_SNPS.csv >> top_col.csv
+awk 'BEGIN {ORS = ","}{print}' top_col.csv > covar_new.csv
+sed 's/\,/\t/g' covar_new.csv > cov_new.txt
+sed 's/ /\	/g' cov_new.txt > covar.txt
+
+#create covariate file for LZ
+echo $covariates_list > cov_col_LZ.csv
+sed 's/\,/\t/g' cov_col_LZ.csv > covar_LZ.txt
+covariates_LZ=`awk -F"t" 'NR==1''{print; exit}' covar_LZ.txt`
+
+
+##while p-value < max 
+pval_dec=`awk -F, 'NR==2 {print $2}' TOP_SNPS.csv `
+
+#cut decimals off of pvals
+pval=`printf "%.0g" "$pval_dec"`
+max_pval=`printf "%.0g" "$max_pvala"`
+
+
+r=$(awk 'BEGIN {print ('${pval^^}'<'${max_pval^^}')?1:0}')
+
+while [ "$r" == 1 ]
+do
+		
+	#run analysis with SNP added to covariates
+	prog=/data4/jperry/PIPELINE_BIN/mmap.2018_06_15_16_42.intel
+	ped=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.analysis.csv 
+	kinbin=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.kinship.MZ.bin
+
+	markers=markers.csv
+	covfile=/data4/Regeneron/datasets/ImpRgn3TM5_APOB_APOC3_LIPE_B4GALT1.csv
+	pheno=/data4/jfrench/WELL_12JUN2018_updated.csv
+	covariates=`awk -F"\t" 'NR==1''{print; exit}' covar.txt`
+	suffix=run$a
+	genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+	
+	
+	$prog --ped $ped --read_binary_covariance_file $kinbin  --phenotype_filename $pheno  --trait  $trait  --covariates $covariates  --file_suffix $suffix  --binary_genotype_filename $genomxs --binary_covariate_filename $genomxs --marker_set $markers --covariate_filename $covfile --genomic_region $chr $min $max --model add --all_output > $suffix.mmap.log
+
+
+	#remove NA, nan, and -nan rows
+	awk -F"," '$17 != "NA" && $17 != "nan" && $17 != "-nan"' $trait.$suffix.add.mle.pval.csv | sort -gt, -k17,17  > sorted_$trait.$suffix.csv
+	
+	#extract SNPname and pval
+	awk -F"," 'NR==2 {OFS=","; print $1,$17}' sorted_$trait.$suffix.csv > pval_new.csv
+	beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+	awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' pval_new.csv > pval_new2.csv
+	awk -F"," 'NR==1 {print; exit}' pval_new2.csv >> TOP_SNPS.csv
+	
+	## print top hit SNPNAME - LZ
+	awk -F"," 'NR==2 {OFS=","; print $1}' sorted_$trait.$suffix.csv > newp_valueLZ.csv
+	# remove letters
+	sed 's/:[^:]*//2g' newp_valueLZ.csv > newpval_cutLZ.csv
+
+	#add prefix
+	prefix="chr"
+	awk -F, -v prefix=$prefix '{print prefix $1}' newpval_cutLZ.csv > newpval_chrLZ.csv
+
+	####add pvalue and beta - LZ
+	pv=`awk -F"," 'NR==2 {OFS=","; print $17}' sorted_$trait.$suffix.csv`
+	awk -F"," -v pv=$pv 'BEGIN {OFS=","} {$2=pv; print}' newpval_chrLZ.csv > newp_valLZ.csv
+	beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+	awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' newp_valLZ.csv > newpvalLZ.csv
+	awk -F"," 'NR=1 {print; exit}' newpvalLZ.csv >> TOP_SNPS_LZ.csv
+	
+	###create markers.list.text  
+	name=test$a
+	awk -F, -v pmark_loop=$pmark_loop '$17<pmark_loop {print $1}' sorted_$trait.$suffix.csv > $name.marker.list.txt
+	
+	#End script if file size for markers list is 0 ####here
+	if [ `du -b $name.marker.list.txt | awk '{print $1}'` -eq 0 ];
+	then
+		sed -i '$d' TOP_SNPS.csv
+		sed -i '$d' TOP_SNPS_LZ.csv
+		break
+	fi
+	
+	#End script if new pval is bigger than cutoff
+	pval_newdec=`awk -F, 'END {print $2}' TOP_SNPS.csv`
+	pval_new=`printf "%.0g" "$pval_newdec"`
+	t=$(awk 'BEGIN {print ('${pval_new^^}'<'${max_pval^^}')?1:0}')
+	
+	if [ "$t" != 1 ];
+	then
+		sed -i '$d' TOP_SNPS.csv
+		sed -i '$d' TOP_SNPS_LZ.csv
+		break
+	fi
+		
+	##########################calculate LD####################################
+	listLD=$name.marker.list.txt
+	calcLD_refsnp=`awk -F, 'NR==2 {print $1}' sorted_$trait.$suffix.csv`
+	bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+
+	# BASIC DEFINITIONS:
+	myMMAP=/data4/datasets/mmap/mmap
+	#myMMAP=/data4/datasets/mmap/mmap.2018_06_15_16_42.intel
+	myPLINK=/data4/bin/plink
+	datasetLD=$name.subset
+	resultsLD=$name.results
+	plinkOut1=$name.plinkOut1.log
+	mmapOut1=$name.mmapOut1.log
+	mmapOut2=$name.mmapOut2.log
+	mmapOut3=$name.mmapOut3.log
+	mmapOut4=$name.mmapOut4.log
+	skip_fields=8  # number of columns to skip before individual genotypes begin
+	
+	# STEP1: subset the genotype file with a marker_set and write out as a csv file
+	$myMMAP --marker_by_subject_mmap2csv --binary_input_filename $bin_input_file --csv_output_filename $datasetLD.csv --marker_set $listLD --file_suffix $name.1 > $mmapOut1 2>&1
+
+	# STEP2: change imputed dosages to genotype values of 0, 1 or 2
+	#        This step can be skipped if genotypes are not imputed dosages
+	/usr/bin/perl dose_to_genotype.pl $datasetLD.csv $skip_fields
+	cp $datasetLD.csv $datasetLD.original.csv
+	mv $datasetLD.csv.genotypes $datasetLD.csv
+
+	# STEP3: convert csv to mmap MxS.bin
+	$myMMAP --write_binary_genotype_file --csv_input_filename $datasetLD.csv --binary_output_filename $datasetLD.MxS.bin --num_skip_fields $skip_fields --file_suffix $name.2 > $mmapOut2 2>&1
+
+	# STEP4: transpose MxS.bin to SxM.bin
+	$myMMAP --transpose_binary_genotype_file --binary_input_filename $datasetLD.MxS.bin --binary_output_filename $datasetLD.SxM.bin --file_suffix $name.3 > $mmapOut3 2>&1
+
+	# STEP5: create plink dataset from the SxM.bin
+	$myMMAP --subject_by_marker_mmap2plink --binary_input_filename $datasetLD.SxM.bin --plink_output_prefix $datasetLD --use_snpname --file_suffix $name.4 > $mmapOut4 2>&1
+
+	# STEP6: run Plink to perform the LD calculations on everything in the "subset" dataset
+	$myPLINK --file $datasetLD --r2 dprime --ld-snp $calcLD_refsnp --make-founders --out $resultsLD --ld-window 999999999 --ld-window-kb 999999999 --ld-window-r2 0 > $plinkOut1 2>&1
+	
+	#sort result file
+	(head -n 1 $name.results.ld && tail -n +2 $name.results.ld | sort -gr -k7,7) > sorted.$name.results.ld
+	
+	####create epacts file####
+	# remove letters
+	f=$trait.$suffix.add.mle.pval.csv
+	awk -F, '{OFS="\t"; print $3,$4,$4,$1,$17}' $f | tail -n +1 > epacts.INPUT.txt
+	sed 's/[A-Z]*//g' epacts.INPUT.txt > epacts.INPUT_cut.txt
+	sed -i 's/:://g' epacts.INPUT_cut.txt
+	sed -i '1d' epacts.INPUT_cut.txt
+
+	#add prefix
+	prefix="chr"
+	awk -v prefix=$prefix '{print $1,$2,$3,prefix $4,$5}' epacts.INPUT_cut.txt > epacts.INPUT_chr.txt
+
+	#add in headers
+	echo "#CHROM	BEGIN	END	MARKER_ID	PVALUE" > epacts.header
+	cat epacts.header epacts.INPUT_chr.txt > epac.$name.INPUT_final.txt.epacts
+
+	####create ld file####
+	ldfile=sorted.$name.results.ld 
+	awk '{OFS="\t"; print $3,$6,$8,$7}' $ldfile > locuszoom.INPUT.txt.ld
+
+	# remove letters
+	sed 's/[A-Z]*//g' locuszoom.INPUT.txt.ld > locuszoom.INPUT_cut.txt.ld
+	sed -i 's/:://g' locuszoom.INPUT_cut.txt.ld
+	sed -i '1d' locuszoom.INPUT_cut.txt.ld
+
+	#add prefix
+	prefix="chr"
+	awk -v prefix=$prefix '{print prefix $1,prefix $2,$3,$4}' locuszoom.INPUT_cut.txt.ld > locuszoom.INPUT_chr.txt.ld
+
+	#add in headers
+	echo "snp1	snp2	dprime	rsquare" > ld.header
+	cat ld.header locuszoom.INPUT_chr.txt.ld > locuszoom.$name.INPUT_final.txt.ld
+
+	##make files tab delimited###
+	sed 's/ /\t/g' epac.$name.INPUT_final.txt.epacts > ts.epac.$name.INPUT_final.txt.epacts
+	sed 's/ /\t/g' locuszoom.$name.INPUT_final.txt.ld > ts.locuszoom.$name.INPUT_final.txt.ld
+	
+	#format covariates file LZ- switch from row to columns
+	sed 's/ \+/,/g' covar_LZ.txt > top_row_LZ.csv
+	tr -s ',' '\n' < top_row_LZ.csv | tr -d '"' > top_col_LZ.csv
+	
+	#add new SNP to covariates
+	awk -v a=$a -F"," 'NR==a {print $1}' TOP_SNPS_LZ.csv >> top_col_LZ.csv
+	awk 'BEGIN {ORS = ","}{print}' top_col_LZ.csv > covar_new_LZ.csv
+	sed 's/\,/\t/g' covar_new_LZ.csv > cov_new_LZ.txt
+	sed 's/ /\	/g' cov_new_LZ.txt > covar_LZ.txt
+	covariates_LZ=`awk -Ft 'NR==1 {print}' covar_LZ.txt`
+	
+	#create b variable
+	b=`expr $a + 1`
+	
+	#generate LocusZoom
+	calcLD_refsnp=`awk -F, -v b=$b 'NR==b {print $1}' TOP_SNPS_LZ.csv`
+	epacts=ts.epac.$name.INPUT_final.txt.epacts
+	locuszoom=ts.locuszoom.$name.INPUT_final.txt.ld
+	
+	/data4/bin/locuszoom  --build hg38 --epacts $epacts --ld $locuszoom --refsnp $calcLD_refsnp --chr $chr --start $min --end $max geneFontSize=.5 ymax=$ymax vertline="$vertline" vertLineColor="green4" vertLineType="1" vertLineWidth="1" signifLine=$sigline signifLineColor="red,royalblue" title="$trait on Chr$chr [ImpRgn3TM5]" titleCex=1.3 title2="Top Variant: $calcLD_refsnp Covariates: $covariates_LZ" title2Cex=1.0 title2Color="gray30" showRecomb=TRUE recombColor="gray80" recombAxisColor="gray60" --plotonly --cache None --no-date --prefix "LZ_$trait.$name.ImpRgn3TM5"  >> LZdialog.log 2>&1 
+
+	##remove line from TOP_SNPS.csv
+	sed -i '$d' TOP_SNPS.csv
+
+	##add LZ filename to doc
+	awk -F"," 'NR==2 {OFS=","; print $1,$17}' sorted_$trait.$suffix.csv > newpval_LD.csv
+	beta=`awk -F"," 'NR==2 {print $13}' sorted_$trait.$suffix.csv | awk -F"E" 'BEGIN{OFMT="%10.10f"} {print $1 * (10 ^ $2)}'`
+	awk -F"," -v b=$beta 'BEGIN {OFS=","} {$3=b; print}' newpval_LD.csv > newpvalLD.csv
+	file=LZ_$trait.$name.ImpRgn3TM5_$calcLD_refsnp.pdf
+	echo $file > newLZname.csv
+	lzname=`awk -F"," 'NR==1 {print $1}' newLZname.csv`
+	awk -F"," -v lzname=$lzname 'BEGIN {OFS=","} {$4=lzname; print}' newpvalLD.csv > newpval_withLZ.csv
+	awk -F"," 'NR==1 {print; exit}' newpval_withLZ.csv >> TOP_SNPS.csv
+
+	#cut down markers for inclusion in further analysis
+	awk -F, -v pcut=$pcut '$17 < $pcut { print $1}' sorted_$trait.$suffix.csv > markers.csv
+	
+	#add one to variables
+	((a+=1))
+	
+	#format covariates file - switch from row to columns
+	sed 's/ \+/,/g' covar.txt > top_row.csv
+	tr -s ',' '\n' < top_row.csv | tr -d '"' > top_col.csv
+	
+	#add new SNP to covariates
+	awk -v a=$a -F"," 'NR==a {print $1}' TOP_SNPS.csv >> top_col.csv
+	awk 'BEGIN {ORS = ","}{print}' top_col.csv > covar_new.csv
+	sed 's/\,/\t/g' covar_new.csv > cov_new.txt
+	sed 's/ /\	/g' cov_new.txt > covar.txt
+	
+	#set new pval for loop
+	pval_dec=`awk -F, -v b=$b 'NR==b {print $2}' TOP_SNPS.csv`
+	pval=`printf "%.0g" "$pval_dec"`
+	
+	r=$(awk 'BEGIN {print ('${pval^^}'<'${max_pval^^}')?1:0}')
+	
+done
+
+mkdir -p $dir
+mv *pdf Results/
+mv TOP_SNPS.csv Results/
+
+if [ $debug == 0 ]
+then 
+	rm *csv *txt *epacts *header *ld *log *nosex *map *bin *ped *.o* 
+fi
