@@ -1,4 +1,4 @@
-#Conditional Analysis Cakewalk
+# Conditional Analysis Cakewalk
 
 Linkage disequilibrium (LD), the nonrandom association of alleles at different loci (Maruki & Lynch, 2014), is an important consideration when performing association analysis as it can bias the results. LD can cause some variants to appear significantly associated with a trait that conditional analysis will reveal to have no association. Therefore, ignoring LD can lead to a misinterpretation of genome wide association studies (GWAS), impacting conclusions or future studies derived from the results (Christoforou et al., 2012). As high throughput sequencing becomes more widely used, the challenge of managing the LD is growing. Conditional analysis can identify which variants are independently associated with an outcome (Knight et al., 2012), but running sequential conditional analyses can be tedious and time-consuming. To meet this challenge, we have developed the Conditional Analysis Cakewalk tool for automating this important process.
 
@@ -9,9 +9,9 @@ The Conditional Analysis Cakewalk begins with a section requiring input from the
 -	covariates 
 - desired suffix for output files.  
 -	four thresholds that can be adjusted:
-  -	maximum p-values for including variants in both the initial and subsequent LD calculations 
-  -	the p-value for establishing significance of variants as the termination condition 
-  -	a p-value for limiting which variants are included in each association analysis, which was included to improve processing times 
+    -	maximum p-values for including variants in both the initial and subsequent LD calculations 
+    -	the p-value for establishing significance of variants as the termination condition 
+    -	a p-value for limiting which variants are included in each association analysis, which was included to improve processing times 
 -	the y-axis range and placement of significance lines within the LocusZoom 
 
 Finally, the results will be routed to a user-specified directory with an option for removing all other files to conserve storage space. 
@@ -20,7 +20,7 @@ The Conditional Analysis Cakewalk utilizes MMAP to conduct the initial associati
 
 
 
-##References
+## References
 
 Christoforou, A., Dondrup, M., Mattingsdal, M., Mattheisen, M., Giddaluru, S., Nothen, M.M., Rietschel, M., Cichon, S., Djurovic, S., Andreassen, O.A., Jonassen, I., Steen, V.M., Puntervoll, P., & Le Hellard, S. (2012). Linkage-disequilibrium-based binning affects the interpretation of GWASs. American Journal of Human Genetics, 90(4), 727-733.
 
