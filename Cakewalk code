@@ -30,6 +30,11 @@ min=11000000
 max=11700000
 genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
 
+# set location of MMAP and PLINK
+myMMAP=/data4/datasets/mmap/mmap
+myPLINK=/data4/bin/plink
+bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+
 #Set up covariates: separate covariates with a "," 
 covariates_list="age, sex, APOB, APOC3"
 
@@ -106,12 +111,8 @@ awk -F, -v pmark=$pmark '$17<pmark { print $1}' sorted_$trait.$suffix.csv > test
 name=test1
 listLD=$name.marker.list.txt
 calcLD_refsnp=`awk -F, 'NR==2 {print $1}' TOP_SNPS.csv`
-bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
 
 # BASIC DEFINITIONS:
-myMMAP=/data4/datasets/mmap/mmap
-#myMMAP=/data4/datasets/mmap/mmap.2018_06_15_16_42.intel
-myPLINK=/data4/bin/plink
 datasetLD=$name.subset
 resultsLD=$name.results
 plinkOut1=$name.plinkOut1.log
@@ -245,20 +246,11 @@ while [ "$r" == 1 ]
 do
 		
 	#run analysis with SNP added to covariates
-	prog=/data4/jperry/PIPELINE_BIN/mmap.2018_06_15_16_42.intel
-	ped=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.analysis.csv 
-	kinbin=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.kinship.MZ.bin
-
 	markers=markers.csv
-	covfile=/data4/Regeneron/datasets/ImpRgn3TM5_APOB_APOC3_LIPE_B4GALT1.csv
-	pheno=/data4/jfrench/WELL_12JUN2018_updated.csv
 	covariates=`awk -F"\t" 'NR==1''{print; exit}' covar.txt`
 	suffix=run$a
-	genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
-	
 	
 	$prog --ped $ped --read_binary_covariance_file $kinbin  --phenotype_filename $pheno  --trait  $trait  --covariates $covariates  --file_suffix $suffix  --binary_genotype_filename $genomxs --binary_covariate_filename $genomxs --marker_set $markers --covariate_filename $covfile --genomic_region $chr $min $max --model add --all_output > $suffix.mmap.log
-
 
 	#remove NA, nan, and -nan rows
 	awk -F"," '$17 != "NA" && $17 != "nan" && $17 != "-nan"' $trait.$suffix.add.mle.pval.csv | sort -gt, -k17,17  > sorted_$trait.$suffix.csv
@@ -312,12 +304,8 @@ do
 	##########################calculate LD####################################
 	listLD=$name.marker.list.txt
 	calcLD_refsnp=`awk -F, 'NR==2 {print $1}' sorted_$trait.$suffix.csv`
-	bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
 
 	# BASIC DEFINITIONS:
-	myMMAP=/data4/datasets/mmap/mmap
-	#myMMAP=/data4/datasets/mmap/mmap.2018_06_15_16_42.intel
-	myPLINK=/data4/bin/plink
 	datasetLD=$name.subset
 	resultsLD=$name.results
 	plinkOut1=$name.plinkOut1.log
