@@ -16,8 +16,7 @@ The Conditional Analysis Cakewalk begins with a section requiring input from the
 
 Finally, the results will be routed to a user-specified directory with an option for removing all other files to conserve storage space. 
 
-The Conditional Analysis Cakewalk utilizes MMAP to conduct the initial association analysis between the specified trait and genomic region (O’Connell). The output file is then sorted and processed into a marker list for LD calculations, which are also conducted using MMAP. The LD results are again sorted and processed into files formatted specifically for LocusZoom. The LocusZoom plot includes all variants in the specified region, with a green vertical line in the location of the top variant. The Conditional Analysis Cakewalk will continue to iterate through the MMAP analysis, LD calculations, and LocusZoom plotting until the p-value of the top variant is greater than the cutoff p-value specified in the beginning of the script.
-
+The Conditional Analysis Cakewalk utilizes [MMAP](https://github.com/MMAP/MMAP-releases-issues-Q-and-A/releases/tag/mmap.2018_04_07_13_28.intel) to conduct the initial association analysis between the specified trait and genomic region (O’Connell). The output file is then sorted and processed into a marker list for LD calculations, which are also conducted using MMAP and [PLINK](https://www.cog-genomics.org/plink2/). The LD results are again sorted and processed into files formatted specifically for [LocusZoom](https://github.com/statgen/locuszoom-standalone). The LocusZoom plot includes all variants in the specified region, with a green vertical line in the location of the top variant. The Conditional Analysis Cakewalk will continue to iterate through the MMAP analysis, LD calculations, and LocusZoom plotting until the p-value of the top variant is greater than the cutoff p-value specified in the beginning of the script.
 
 
 ## References
