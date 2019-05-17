@@ -21,19 +21,19 @@ prog=/data4/jperry/PIPELINE_BIN/mmap.2018_06_15_16_42.intel
 ped=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.analysis.csv 
 kinbin=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.kinship.MZ.bin
 
-covfile=/data4/Regeneron/datasets/ImpRgn3TM5_APOB_APOC3_LIPE_B4GALT1.csv
+covfile=/data4/datasets/
 pheno=/data4/jfrench/WELL_12JUN2018_updated.csv
 suffix=run1
 trait=LDL_WELL
 chr=19
 min=11000000 
 max=11700000
-genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+genomxs=/data4/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
 
 # set location of MMAP and PLINK
 myMMAP=/data4/datasets/mmap/mmap
 myPLINK=/data4/bin/plink
-bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
+bin_input_file=/data4/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr${chr}.MxS.bin
 
 #Set up covariates: separate covariates with a "," 
 covariates_list="age, sex, APOB, APOC3"
