@@ -7,16 +7,17 @@ The Conditional Analysis Cakewalk begins with a section requiring input from the
 -	chromosome number
 -	start/end positions for the region to be scanned
 -	covariates 
-- desired suffix for output files.  
+- desired suffix for output files
+- minor allele frequency (MAF) cutoff
 -	four thresholds that can be adjusted:
     -	maximum p-values for including variants in both the initial and subsequent LD calculations 
     -	the p-value for establishing significance of variants as the termination condition 
     -	a p-value for limiting which variants are included in each association analysis, which was included to improve processing times 
 -	the y-axis range and placement of significance lines within the LocusZoom 
 
-Finally, the results will be routed to a user-specified directory with an option for removing all other files to conserve storage space. 
+Aditionally, the user will have the option of manually selecting the top variant for the initial analysis. IF this option is chosen, the top 10 variants will be printed to the output screen for selection. Finally, the results will be routed to a user-specified directory with an option for removing all other files to conserve storage space. 
 
-The Conditional Analysis Cakewalk utilizes [MMAP](https://github.com/MMAP/MMAP-releases-issues-Q-and-A/releases/tag/mmap.2018_04_07_13_28.intel) to conduct the initial association analysis between the specified trait and genomic region (O’Connell). The output file is then sorted and processed into a marker list for LD calculations, which are also conducted using MMAP and [PLINK](https://www.cog-genomics.org/plink2/). The LD results are again sorted and processed into files formatted specifically for [LocusZoom](https://github.com/statgen/locuszoom-standalone). The LocusZoom plot includes all variants in the specified region, with a green vertical line in the location of the top variant. The Conditional Analysis Cakewalk will continue to iterate through the MMAP analysis, LD calculations, and LocusZoom plotting until the p-value of the top variant is greater than the cutoff p-value specified in the beginning of the script.
+The Conditional Analysis Cakewalk is available in two formats, utilizing either [MMAP](https://github.com/MMAP/MMAP-releases-issues-Q-and-A/releases/tag/mmap.2018_04_07_13_28.intel) or [PLINK](https://www.cog-genomics.org/plink2/) to conduct the initial association analysis between the specified trait and genomic region (O’Connell). The output file is then sorted and processed into a marker list for LD calculations, which are also conducted using MMAP and PLINK. The LD results are again sorted and processed into files formatted specifically for [LocusZoom](https://github.com/statgen/locuszoom-standalone). The LocusZoom plot includes all variants in the specified region, with a green vertical line in the location of the top variant. A boxplot will also be created with each iteration of the Cakewalk. The Conditional Analysis Cakewalk will continue to iterate through the MMAP analysis, LD calculations, LocusZoom and boxplot plotting until the p-value of the top variant is greater than the cutoff p-value specified in the beginning of the script.
 
 
 ## References
@@ -28,5 +29,9 @@ Knight, J., Spain, S.L., Capon, F., Hayday, A., Nestle, F.O., Clop, A., Wellcome
 Maruki, T., & Lynch, M. (2014). Genome e-wide estimation of linkage disequilibrium from population-level high-throughput sequencing data. Genetics, 197(4), 1303-1313. 
 
 O’Connell, J.R. MMAP: Mixed Model Analysis for Pedigrees and Populations. Available from: https://mmap.github.io/
+
+Purcell, S, Neale, B, Todd-Brown, K, Thomas, L, Ferreira, MAR, Bender, D, Maller, J, Sklar, P, de Bakker, PIW, Daly, MJ, Sham PC. (2007). PLINK: a toolset for whole-genome association and population-based linkage analysis. American Journal of Human Genetics, 81. Available from https://www.cog-genomics.org/plink/1.9/#test_note. 
+
+Welch, R., Pruim, R. (2010). LocusZoom standalone. Available from: https://github.com/statgen/locuszoom-standalone. 
 
 
