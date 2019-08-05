@@ -12,25 +12,25 @@ min=8000000
 max=18000000
 
 #Set location for covariate data
-covfile=/data4/jfrench/CAKEWALK/TEST_UPDATES/DATA_SIM/covar.txt
+covfile=
 
 #Set location for phenotype data
-pheno=/data4/jfrench/CAKEWALK/TEST_UPDATES/DATA_SIM/pheno.txt
+pheno=
 
 #Set location for genomic data
-bfile=/data4/jfrench/CAKEWALK/TEST_UPDATES/DATA_SIM/chr19.eur
+bfile=
 
 #Specify bim file location
-bim=/data4/jfrench/CAKEWALK/TEST_UPDATES/DATA_SIM/chr19.eur.bim
+bim=
 
 #Set location for PLINK - download at https://www.cog-genomics.org/plink2 
-myPLINK=/data4/bin/plink
+myPLINK=
 
 #Set location for LocusZoom - download at https://github.com/statgen/locuszoom-standalone
-locuszoom=/data4/bin/locuszoom
+locuszoom=
 
 #Set location for perl - download at https://www.perl.org/
-perl=/usr/bin/perl
+perl=
 
 #Set up covariates: separate covariates with a "," 
 covariates_list="AGE, SEX"
