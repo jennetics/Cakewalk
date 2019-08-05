@@ -1,3 +1,4 @@
+#save file as dose_to_genotype.pl
 #Converts MMAP csv file dosages to genotypes (integers) offset parameter defaults to 8 (for IMPUTED files with INFO column)
 
 use strict;
