@@ -12,40 +12,40 @@ min=11000000
 max=11700000
 
 #Set location for genomic data
-genomxs=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr19.MxS.bin
+genomxs=
 
 #Set location for binary data
-bin_input_file=/data4/Regeneron/datasets/ImpRgn3TM5.maf.0001.info.30.b38.n6153.chr19.MxS.bin
+bin_input_file=
 
 #Set location for covariate data
-covfile=/data4/Regeneron/datasets/ImpRgn3TM5_APOB_APOC3_LIPE_B4GALT1.csv
+covfile=
 
 #Does the data include a kinship file (0=yes, 1=no)?
 kinship=0
 
 #Set location for kinship file
-kinbin=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.kinship.MZ.bin
+kinbin=
 
 #Set location for pedigree data
-ped=/data4/pedigree/mmap/2018_06_26/amish.2018_06_26.analysis.csv
+ped=
 
 #Set location for phenotype data - must be csv format
-pheno=/data4/jfrench/WELL_12JUN2018_sex_age_LDL.csv
+pheno=
 
 #Set location for MMAP - download at https://mmap.github.io/
-myMMAP=/data4/datasets/mmap/mmap
+myMMAP=
 
 #Set location for PLINK - download at https://www.cog-genomics.org/plink2 
-myPLINK=/data4/bin/plink
+myPLINK=
 
 #Set location for LocusZoom - download at https://github.com/statgen/locuszoom-standalone
-locuszoom=/data4/bin/locuszoom
+locuszoom=
 
 #Set location for perl - download at https://www.perl.org/
-perl=/usr/bin/perl
+perl=
 
 #Set up covariates: separate covariates with a "," 
-covariates_list="age, sex, APOB, APOC3"
+covariates_list="AGE, SEX"
 
 #Set minor allele frequency
 MAF=0.01
