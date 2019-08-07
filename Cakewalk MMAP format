@@ -1,7 +1,7 @@
 ########################################################################
 ## Results can be found in file TOP_SNPS.csv. LocusZoom plots and     ##
 ## boxplots can be found in pdf files listed in TOP_SNPS.csv. Please  ##
-## begin by inputting data below.      									          	  ##
+## begin by inputting data below.      		          	      ##
 ##########################input data here###############################
 
 #Select suffix, trait, chromosome, minimum and maximum region
@@ -12,37 +12,37 @@ min=11000000
 max=11700000
 
 #Set location for genomic data
-genomxs=
+genomxs=/path/to/genotype/data
 
 #Set location for binary data
-bin_input_file=
+bin_input_file=/path/to/binary/data
 
 #Set location for covariate data
-covfile=
+covfile=path/to/covariates
 
 #Does the data include a kinship file (0=yes, 1=no)?
 kinship=0
 
 #Set location for kinship file
-kinbin=
+kinbin=/path/to/kinship_file
 
 #Set location for pedigree data
-ped=
+ped=/path/to/pedigree
 
 #Set location for phenotype data - must be csv format
-pheno=
+pheno=/path/to/phenotype
 
 #Set location for MMAP - download at https://mmap.github.io/
-myMMAP=
+myMMAP=/path/to/mmap
 
 #Set location for PLINK - download at https://www.cog-genomics.org/plink2 
-myPLINK=
+myPLINK=/path/to/plink
 
 #Set location for LocusZoom - download at https://github.com/statgen/locuszoom-standalone
-locuszoom=
+locuszoom=/path/to/locuszoom
 
 #Set location for perl - download at https://www.perl.org/
-perl=
+perl=/path/to/perl
 
 #Set up covariates: separate covariates with a "," 
 covariates_list="AGE, SEX"
@@ -86,7 +86,7 @@ select_SNP=0
 #Are you using imputed genotype data (0=yes; 1=no)?
 impute=0
 
-###################beginning of script###################################
+######################################beginning of script############################################
 #create covariate file
 echo $covariates_list > cov_col.csv
 sed 's/\,/\t/g' cov_col.csv > covar.txt
