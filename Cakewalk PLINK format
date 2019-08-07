@@ -12,25 +12,25 @@ min=8000000
 max=18000000
 
 #Set location for covariate data
-covfile=
+covfile=/path/to/covariate/data
 
 #Set location for phenotype data
-pheno=
+pheno=/path/to/phenotype/data
 
 #Set location for genomic data
-bfile=
+bfile=/path/to/geno/data
 
 #Specify bim file location
-bim=
+bim=/path/to/bim
 
 #Set location for PLINK - download at https://www.cog-genomics.org/plink2 
-myPLINK=
+myPLINK=/path/to/plink
 
 #Set location for LocusZoom - download at https://github.com/statgen/locuszoom-standalone
-locuszoom=
+locuszoom=/path/to/locuszoom
 
 #Set location for perl - download at https://www.perl.org/
-perl=
+perl=/path/to/locuszoom
 
 #Set up covariates: separate covariates with a "," 
 covariates_list="AGE, SEX"
@@ -71,7 +71,7 @@ debug=1
 #Do you want the top SNP to be automatically selected as the refSNP? (0=yes; 1=no; if selecting no, top SNPs will be output for you to select the refSNP for analysis)
 select_SNP=0
 
-###################beginning of script###################################
+##############################################beginning of script#####################################################
 
 #check for duplicates
 $myPLINK --bfile $bfile --write-snplist --memory $mem --out all_snps
