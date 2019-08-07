@@ -39,6 +39,8 @@ Instructions for running the Conditional Analysis Cakewalk using the simulated d
 4. If using a Unix machine, type "sh MMAP_CAKEWALK.sh" into the command line
 
 
+
+
 ## References
 
 Christoforou, A., Dondrup, M., Mattingsdal, M., Mattheisen, M., Giddaluru, S., Nothen, M.M., Rietschel, M., Cichon, S., Djurovic, S., Andreassen, O.A., Jonassen, I., Steen, V.M., Puntervoll, P., & Le Hellard, S. (2012). Linkage-disequilibrium-based binning affects the interpretation of GWASs. American Journal of Human Genetics, 90(4), 727-733.
