@@ -21,7 +21,7 @@ The Conditional Analysis Cakewalk is available in two formats, utilizing either 
 
 ## Running the Cakewalk
 Instructions for running the Conditional Analysis Cakewalk using the simulated data are included below.
-### PLINK version
+#### PLINK version
 1. Download: 
     - PLINK_CAKEWALK.sh
     - simulated data PLINK.zip
@@ -29,12 +29,12 @@ Instructions for running the Conditional Analysis Cakewalk using the simulated d
 3. Download PLINK and LocusZoom if needed at the links provided above or within PLINK_CAKEWALK.sh
 4. If using a Unix machine, type "sh PLINK_CAKEWALK.sh" into the command line
 
-### MMAP version
+#### MMAP version
 1. Download:
     - MMAP_CAKEWALK.sh
     - simulated data MMAP.zip
     - dose_to_genotype.pl
-2. Input information at the beginning of PLINK_MMAP.sh file
+2. Input information at the beginning of MMAP_CAKEWALK.sh file
 3. Download PLINK, MMAP and LocusZoom if needed at the links provided above or within MMAP_CAKEWALK.sh
 4. If using a Unix machine, type "sh MMAP_CAKEWALK.sh" into the command line
 
