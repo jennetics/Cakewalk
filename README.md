@@ -19,6 +19,25 @@ Aditionally, the user will have the option of manually selecting the top variant
 
 The Conditional Analysis Cakewalk is available in two formats, utilizing either [MMAP](https://github.com/MMAP/MMAP-releases-issues-Q-and-A/releases/tag/mmap.2018_04_07_13_28.intel) or [PLINK](https://www.cog-genomics.org/plink2/) to conduct the initial association analysis between the specified trait and genomic region (O’Connell). The output file is then sorted and processed into a marker list for LD calculations, which are also conducted using MMAP and PLINK. The LD results are again sorted and processed into files formatted specifically for [LocusZoom](https://github.com/statgen/locuszoom-standalone). The LocusZoom plot includes all variants in the specified region, with a green vertical line in the location of the top variant. A boxplot will also be created with each iteration of the Cakewalk. The Conditional Analysis Cakewalk will continue to iterate through the MMAP analysis, LD calculations, LocusZoom and boxplot plotting until the p-value of the top variant is greater than the cutoff p-value specified in the beginning of the script.
 
+## Running the Cakewalk
+Instructions for running the Conditional Analysis Cakewalk using the simulated data are included below.
+### PLINK version
+1. Download: 
+    - PLINK_CAKEWALK.sh
+    - simulated data PLINK.zip
+2. Input information at the beginning of PLINK_CAKEWALK.sh file
+3. Download PLINK and LocusZoom if needed at the links provided above or within PLINK_CAKEWALK.sh
+4. If using a Unix machine, type "sh PLINK_CAKEWALK.sh" into the command line
+
+### MMAP version
+1. Download:
+    - MMAP_CAKEWALK.sh
+    - simulated data MMAP.zip
+    - dose_to_genotype.pl
+2. Input information at the beginning of PLINK_MMAP.sh file
+3. Download PLINK, MMAP and LocusZoom if needed at the links provided above or within MMAP_CAKEWALK.sh
+4. If using a Unix machine, type "sh MMAP_CAKEWALK.sh" into the command line
+
 
 ## References
 
