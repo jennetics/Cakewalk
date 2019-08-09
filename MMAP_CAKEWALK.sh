@@ -1,15 +1,3 @@
-#!/bin/bash
-# --------------- Name your job
-#$ -N MMAP_CAKE
-# --------------- choose your shell
-#$ -S /bin/bash
-# ---------------- Use current working Directory
-#$ -cwd
-# ---------------- Join output and error files
-#$ -j y
-
-## analysis for genomic region
-
 ########################################################################
 ## Results can be found in file TOP_SNPS.csv. LocusZoom plots can be  ##
 ## found in pdf files listed in TOP_SNPS.csv. Please begin by         ##
